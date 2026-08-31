@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             three: ['three', '@react-three/fiber', '@react-three/drei'],
             firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
-            motion: ['gsap', 'lenis'],
+            motion: ['lenis'],
           },
         },
       },

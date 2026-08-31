@@ -68,12 +68,13 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 export const DEFAULT_HERO: HeroSettings = {
   enabled: true,
   enabledOnMobile: true,
+  modelType: 'dj_mixer',
   modelUrl: '',
   modelUrlMobile: '',
   fallbackImage: '',
   initialScale: 1,
-  initialRotationY: -0.35,
-  cameraDistance: 6.2,
+  initialRotationY: -0.28,
+  cameraDistance: 5.6,
   intensity: 1,
   explodeDistance: 1,
   sectionHeight: 450,
@@ -115,23 +116,23 @@ export const DEFAULT_HERO: HeroSettings = {
   labels: [
     {
       id: 'l1', visible: true, order: 0,
-      title: { ka: 'მაღალი სიმძლავრის ვუფერი', en: 'High Output Woofer', ru: 'Мощный вуфер' },
-      text: { ka: 'ღრმა, კონტროლირებადი დაბალი სიხშირეები.', en: 'Deep, controlled low frequencies.', ru: 'Глубокие, контролируемые низкие частоты.' },
+      title: { ka: 'მაღალი მგრძნობელობის ჯოგ-ბორბლები', en: 'High-Torque Jog Wheels', ru: 'Джог-колёса с высоким откликом' },
+      text: { ka: 'ზუსტი სკრეჩი და ხელით მიქსი, ნულოვანი დაყოვნებით.', en: 'Precise scratching and manual mixing with zero latency.', ru: 'Точный скрэтч и ручное сведение без задержки.' },
     },
     {
       id: 'l2', visible: true, order: 1,
-      title: { ka: 'ზუსტი HF დრაივერი', en: 'Precision HF Driver', ru: 'Точный ВЧ-драйвер' },
-      text: { ka: 'გამჭვირვალე მაღალი სიხშირეები დარბაზის ბოლომდე.', en: 'Transparent highs across the room.', ru: 'Прозрачные высокие по всему залу.' },
+      title: { ka: 'არხების ფეიდერები და 3-ზოლიანი EQ', en: 'Channel Faders & 3-Band EQ', ru: 'Фейдеры каналов и 3-полосный EQ' },
+      text: { ka: 'ოთხი არხი, გლუვი ფეიდერები და ზუსტი ეკვალიზაცია.', en: 'Four channels, smooth faders and precise equalisation.', ru: 'Четыре канала, плавные фейдеры и точная эквализация.' },
     },
     {
       id: 'l3', visible: true, order: 2,
-      title: { ka: 'გამაგრებული კორპუსი', en: 'Reinforced Cabinet', ru: 'Усиленный корпус' },
-      text: { ka: 'ტურ-კლასის კონსტრუქცია.', en: 'Tour-grade construction.', ru: 'Конструкция гастрольного класса.' },
+      title: { ka: 'ეფექტების სექცია და ეკრანი', en: 'FX Section & Display', ru: 'Секция эффектов и дисплей' },
+      text: { ka: 'ჩაშენებული ეფექტები და ბიბლიოთეკის სწრაფი ნავიგაცია.', en: 'Onboard effects and fast library browsing.', ru: 'Встроенные эффекты и быстрая навигация по библиотеке.' },
     },
     {
       id: 'l4', visible: true, order: 3,
       title: { ka: 'პროფესიონალური I/O', en: 'Professional I/O', ru: 'Профессиональный I/O' },
-      text: { ka: 'XLR in/through, სუფთა კომუტაცია.', en: 'XLR in/through, clean patching.', ru: 'XLR in/through, чистая коммутация.' },
+      text: { ka: 'ბალანსირებული გამოსასვლელები, XLR და სუფთა კომუტაცია.', en: 'Balanced outputs, XLR and clean patching.', ru: 'Балансные выходы, XLR и чистая коммутация.' },
     },
   ],
 };

@@ -14,7 +14,7 @@ in Firestore. Changes appear on the public site immediately — no rebuild.
 | Frontend | React 18 + TypeScript + Vite |
 | Styling | Tailwind CSS v4 (custom design tokens, no component library) |
 | 3D | three.js · @react-three/fiber · @react-three/drei |
-| Motion | GSAP ScrollTrigger · Lenis smooth scroll |
+| Motion | Lenis smooth scroll · rect-driven scroll timeline |
 | Database | Firebase Firestore (localized JSON fields, no per-language record duplication) |
 | Auth | Firebase Auth (email + password) with an `adminUsers` roster and roles |
 | Files | Firebase Storage, with an optional unsigned Cloudinary fallback |
@@ -98,12 +98,22 @@ if anything still references it.
 
 A ~450vh pinned section whose entire state is a pure function of scroll progress: headline →
 product movement → exploded view → technical labels → rental storytelling → reassembly → final CTA.
-Scrolling back reverses it; stopping stops it.
+Scrolling back reverses it; stopping stops it. Progress is measured from the section's own
+`getBoundingClientRect()` every frame — that stays correct under smooth scrolling, resizes and hot
+reloads, where a cached scroll-trigger range silently sticks at zero.
 
-Out of the box it renders a **procedural PA speaker** built from named parts (grille, horn, woofer,
-cabinet, amplifier, I/O panel, handles) with an engineered explode layout, so the sequence works
-before anyone uploads anything. Upload a GLB/GLTF in **Admin → 3D hero settings** and each
-top-level object in the file becomes an explodable part — the animation system is unchanged.
+Two built-in products ship with it, selectable in **Admin → 3D hero settings**:
+
+- **DJ controller** (default) — two jog wheels, four channel strips with EQ and faders, crossfader,
+  performance pads, FX section with display, brushed top plate, chassis, internal board and rear
+  I/O. Being a wide flat console, it separates into *layers* along Y, the way a technical drawing of
+  a console reads.
+- **PA speaker** — grille, horn, woofer, cabinet, amplifier, I/O panel and handles, separating
+  mostly along Z.
+
+Both work before anyone uploads anything. Upload a GLB/GLTF instead and each top-level object in the
+file becomes an explodable part — the animation system is unchanged. The product is auto-scaled to
+the viewport (and to its own exploded spread), so it stays framed from phone to ultrawide.
 
 Everything else is admin-controlled too: model, mobile model, fallback image, scale, rotation,
 camera distance, intensity, explode distance, section height, labels, copy and both CTAs.

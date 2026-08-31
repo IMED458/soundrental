@@ -2,16 +2,16 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, useProgress } from '@react-three/drei';
 import { Link } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import * as THREE from 'three';
 import { useI18n } from '../lib/i18n';
 import { useSettings } from '../lib/settings';
 import { href } from '../lib/links';
-import { cx } from '../lib/utils';
 import { GltfSpeaker, ProceduralSpeaker } from './SpeakerModel';
+import { ProceduralDJMixer } from './DJMixerModel';
 
-gsap.registerPlugin(ScrollTrigger);
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const smooth = (v: number) => v * v * (3 - 2 * v);
 
 /** Ramp 0→1 across [a,b], hold, then 1→0 across [c,d]. */
 function band(p: number, a: number, b: number, c: number, d: number): number {
@@ -20,76 +20,120 @@ function band(p: number, a: number, b: number, c: number, d: number): number {
   if (p <= c) return 1;
   return 1 - (p - c) / (d - c);
 }
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const smooth = (v: number) => v * v * (3 - 2 * v);
 
-/** Scroll timeline — the whole hero is a pure function of one progress value. */
+/** Piecewise eased interpolation through scroll keyframes. */
+function track(p: number, keys: Array<[number, number]>): number {
+  if (p <= keys[0][0]) return keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [p0, v0] = keys[i];
+    const [p1, v1] = keys[i + 1];
+    if (p <= p1) return v0 + (v1 - v0) * smooth(clamp01((p - p0) / (p1 - p0)));
+  }
+  return keys[keys.length - 1][1];
+}
+
+const TAU = Math.PI * 2;
+
+/**
+ * The whole hero is a pure function of one scroll value, so scrolling back
+ * reverses it exactly and stopping stops it.
+ *
+ * 0.00–0.16  headline, console floating
+ * 0.16–0.40  rotation and tilt, camera closes in
+ * 0.40–0.62  exploded view with technical labels
+ * 0.62–0.80  rental storytelling
+ * 0.80–0.92  reassembly, full turn back to the front
+ * 0.92–1.00  final CTA
+ */
 function stageValues(p: number) {
-  const explode = smooth(clamp01(band(p, 0.18, 0.42, 0.68, 0.88)));
+  const explode = smooth(clamp01(band(p, 0.16, 0.40, 0.62, 0.82)));
   return {
-    intro: band(p, -0.01, 0, 0.06, 0.16),
     explode,
-    spin: clamp01((p - 0.08) / 0.5) * Math.PI * 0.22,
-    labels: band(p, 0.40, 0.47, 0.62, 0.68),
-    story: band(p, 0.60, 0.67, 0.76, 0.83),
-    final: band(p, 0.86, 0.93, 1.01, 1.02),
-    // Pull back while the cabinet is apart so the whole exploded view stays in frame.
-    dolly: 1.18 - 0.18 * smooth(clamp01(p / 0.18)) + 0.85 * explode,
+    intro: band(p, -0.01, 0, 0.07, 0.16),
+    labels: band(p, 0.38, 0.45, 0.56, 0.62),
+    story: band(p, 0.62, 0.68, 0.74, 0.80),
+    final: band(p, 0.86, 0.92, 1.01, 1.02),
+    spin: track(p, [[0.10, 0], [0.45, Math.PI * 0.42], [0.62, Math.PI * 0.55], [0.90, TAU], [1, TAU]]),
+    tilt: track(p, [[0.16, 0], [0.42, 0.22], [0.62, 0.22], [0.84, 0]]),
+    // Pull back while the console is apart so the whole exploded view stays in frame.
+    dolly: 1.16 - 0.16 * smooth(clamp01(p / 0.16)) + 0.5 * explode,
   };
 }
 
 function Rig({ progress, distance }: { progress: React.MutableRefObject<number>; distance: number }) {
   const { camera } = useThree();
   useFrame((_, delta) => {
-    const { dolly } = stageValues(progress.current);
-    const target = distance * dolly;
+    const { dolly, explode } = stageValues(progress.current);
     const damp = 1 - Math.pow(0.002, delta);
-    camera.position.z += (target - camera.position.z) * damp;
-    camera.position.y += (0.25 - camera.position.y) * damp;
-    camera.lookAt(0, 0, 0);
+    camera.position.z += (distance * dolly - camera.position.z) * damp;
+    camera.position.y += ((1.15 + explode * 0.55) - camera.position.y) * damp;
+    camera.lookAt(0, -0.3 + explode * 0.2, 0);
   });
   return null;
 }
 
-/**
- * On wide screens the assembled product sits beside the headline rather than
- * behind it, and slides back to centre as it comes apart.
- */
-function Framing({ progress, children }: { progress: React.MutableRefObject<number>; children: React.ReactNode }) {
-  const group = useRef<THREE.Group>(null);
-  const { size } = useThree();
-  useFrame((_, delta) => {
-    const g = group.current;
-    if (!g) return;
-    const wide = size.width / size.height > 1.25;
-    const target = wide ? 1.35 * (1 - stageValues(progress.current).explode) : 0;
-    const damp = 1 - Math.pow(0.002, delta);
-    g.position.x += (target - g.position.x) * damp;
-  });
-  return <group ref={group}>{children}</group>;
-}
-
 function Drivers({
-  progress, explode, spin,
+  progress, explode, spin, tilt,
 }: {
   progress: React.MutableRefObject<number>;
   explode: React.MutableRefObject<number>;
   spin: React.MutableRefObject<number>;
+  tilt: React.MutableRefObject<number>;
 }) {
   useFrame(() => {
     const v = stageValues(progress.current);
     explode.current = v.explode;
     spin.current = v.spin;
+    tilt.current = v.tilt;
   });
   return null;
 }
 
-function Scene({
-  progress, explode, spin, modelUrl, cameraDistance, scale, rotationY, explodeDistance, accentLight, accent, quality,
-}: {
+/**
+ * Keeps the product framed on every screen: scales it to the visible width and
+ * drops it lower on portrait viewports so the headline stays readable.
+ */
+function ModelFrame({
+  width, explode, children,
+}: { width: number; explode: React.MutableRefObject<number>; children: React.ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  const { camera, size } = useThree();
+  useFrame((_, delta) => {
+    const g = group.current;
+    if (!g) return;
+    const cam = camera as THREE.PerspectiveCamera;
+    const aspect = size.width / size.height;
+    const visibleWidth = 2 * cam.position.z * Math.tan((cam.fov * Math.PI) / 360) * aspect;
+    // The exploded arrangement is much wider than the assembled product.
+    const spread = width * (1 + 0.6 * explode.current);
+    const fit = Math.min(1, (visibleWidth * 0.78) / spread);
+    const damp = 1 - Math.pow(0.002, delta);
+    const next = g.scale.x + (fit - g.scale.x) * damp;
+    g.scale.setScalar(next);
+    const targetY = aspect < 1 ? -0.95 : -0.35;
+    g.position.y += (targetY - g.position.y) * damp;
+  });
+  return <group ref={group} position={[0, -0.35, 0]}>{children}</group>;
+}
+
+/** Technical grid floor — the reference's studio-blueprint cue. */
+function StudioFloor({ y }: { y: number }) {
+  const grid = useMemo(() => {
+    const helper = new THREE.GridHelper(26, 26, '#2E2E36', '#17171B');
+    const material = helper.material as THREE.Material;
+    material.transparent = true;
+    material.opacity = 0.5;
+    return helper;
+  }, []);
+  return <primitive object={grid} position={[0, y, 0]} />;
+}
+
+interface SceneProps {
   progress: React.MutableRefObject<number>;
   explode: React.MutableRefObject<number>;
   spin: React.MutableRefObject<number>;
+  tilt: React.MutableRefObject<number>;
+  modelType: 'dj_mixer' | 'speaker';
   modelUrl?: string;
   cameraDistance: number;
   scale: number;
@@ -97,35 +141,57 @@ function Scene({
   explodeDistance: number;
   accentLight: boolean;
   accent: string;
+  background: string;
   quality: 'high' | 'low';
-}) {
+}
+
+function Scene({
+  progress, explode, spin, tilt, modelType, modelUrl, cameraDistance, scale, rotationY,
+  explodeDistance, accentLight, accent, background, quality,
+}: SceneProps) {
+  const isMixer = modelType === 'dj_mixer' && !modelUrl;
   return (
     <>
+      <fogExp2 attach="fog" args={[background, 0.055]} />
+
       <ambientLight intensity={0.5} />
       <hemisphereLight args={['#9FB4CC', '#0A0A0B', 0.6]} />
       <directionalLight
         position={[-4, 6, 5]} intensity={2.6} color="#FFF6E8"
         castShadow={quality === 'high'} shadow-mapSize={[1024, 1024]}
       />
-      <directionalLight position={[5, 1.5, -3]} intensity={1.4} color="#8FA8C8" />
-      {accentLight && <pointLight position={[3.6, -1.6, 3.4]} intensity={14} color={accent} distance={13} decay={2} />}
+      <directionalLight position={[5, 3, -3]} intensity={1.4} color="#8FA8C8" />
+      <directionalLight position={[-1.5, 1.5, 6]} intensity={1.1} color="#E8ECF2" />
       <spotLight position={[0, 7, 2]} angle={0.5} penumbra={1} intensity={9} color="#FFFFFF" />
-      {/* Front fill so the baffle never reads as a black slab */}
-      <directionalLight position={[-1.5, 0.5, 6]} intensity={1.1} color="#E8ECF2" />
+      {accentLight && (
+        <pointLight position={[3.2, -0.6, 3.2]} intensity={16} color={accent} distance={14} decay={2} />
+      )}
 
-      <Framing progress={progress}>
+      <ModelFrame width={isMixer ? 3.3 : 1.9} explode={explode}>
         {modelUrl ? (
-          <GltfSpeaker url={modelUrl} explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
+          <GltfSpeaker url={modelUrl} explode={explode} spin={spin} distance={explodeDistance}
+                       scale={scale} baseRotationY={rotationY} />
+        ) : isMixer ? (
+          <ProceduralDJMixer
+            explode={explode} spin={spin} tilt={tilt} distance={explodeDistance}
+            scale={scale} baseRotationY={rotationY} accent={accent}
+          />
         ) : (
-          <ProceduralSpeaker explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
+          <ProceduralSpeaker explode={explode} spin={spin} distance={explodeDistance}
+                             scale={scale} baseRotationY={rotationY} />
         )}
-      </Framing>
+      </ModelFrame>
 
       {quality === 'high' && (
-        <ContactShadows position={[0, -1.75, 0]} opacity={0.55} scale={9} blur={2.6} far={4} resolution={512} color="#000000" />
+        <>
+          <StudioFloor y={isMixer ? -1.5 : -1.9} />
+          <ContactShadows position={[0, isMixer ? -1.42 : -1.78, 0]} opacity={0.5}
+                          scale={11} blur={2.8} far={5} resolution={512} color="#000000" />
+        </>
       )}
+
       <Rig progress={progress} distance={cameraDistance} />
-      <Drivers progress={progress} explode={explode} spin={spin} />
+      <Drivers progress={progress} explode={explode} spin={spin} tilt={tilt} />
     </>
   );
 }
@@ -137,9 +203,12 @@ function LoadingOverlay({ onDone }: { onDone: () => void }) {
     <div className="absolute inset-0 z-20 grid place-items-center bg-[#0A0A0B]">
       <div className="w-56">
         <div className="h-px bg-[#232327] overflow-hidden">
-          <div className="h-full bg-[var(--accent)] transition-[width] duration-300" style={{ width: `${Math.round(progress)}%` }} />
+          <div className="h-full bg-[var(--accent)] transition-[width] duration-300"
+               style={{ width: `${Math.round(progress)}%` }} />
         </div>
-        <p className="mt-4 text-[11px] tracking-[0.24em] text-[#6A6A72] font-display">{Math.round(progress)}%</p>
+        <p className="mt-4 text-[11px] tracking-[0.24em] text-[#6A6A72] font-display">
+          {Math.round(progress)}%
+        </p>
       </div>
     </div>
   );
@@ -152,12 +221,14 @@ export default function Hero3D() {
   const progress = useRef(0);
   const explode = useRef(0);
   const spin = useRef(0);
+  const tilt = useRef(0);
 
   const introRef = useRef<HTMLDivElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
   const storyRef = useRef<HTMLDivElement>(null);
   const finalRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
   const [ready, setReady] = useState(false);
   const [reduced, setReduced] = useState(false);
@@ -175,23 +246,21 @@ export default function Hero3D() {
 
   const sectionHeight = reduced ? 100 : Math.max(150, hero.sectionHeight || 450);
 
-  // Scroll -> progress. Overlay opacity is written straight to the DOM so the
-  // hero never re-renders React while scrolling.
+  // Scroll drives one progress value, measured straight from the section's own
+  // rect — that stays correct under smooth scrolling, HMR and resizes, which a
+  // cached scroll-trigger range does not. Overlay opacity is written directly to
+  // the DOM so React never re-renders while scrolling.
   useEffect(() => {
     if (reduced) { progress.current = 0; return; }
     const el = wrapRef.current;
     if (!el) return;
 
-    const st = ScrollTrigger.create({
-      trigger: el,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: true,
-      onUpdate: (self) => { progress.current = self.progress; },
-    });
-
     let raf = 0;
     const paint = () => {
+      const rect = el.getBoundingClientRect();
+      const travel = el.offsetHeight - window.innerHeight;
+      progress.current = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
+
       const v = stageValues(progress.current);
       const set = (node: HTMLElement | null, o: number, y = 0) => {
         if (!node) return;
@@ -206,12 +275,13 @@ export default function Hero3D() {
       set(storyRef.current, v.story, (1 - v.story) * 24);
       set(finalRef.current, v.final, (1 - v.final) * 24);
       if (hintRef.current) hintRef.current.style.opacity = String(Math.max(0, 1 - progress.current * 14));
+      if (barRef.current) barRef.current.style.width = `${progress.current * 100}%`;
+
       raf = requestAnimationFrame(paint);
     };
     raf = requestAnimationFrame(paint);
-
-    return () => { st.kill(); cancelAnimationFrame(raf); };
-  }, [reduced, hero.showLabels, sectionHeight]);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced, hero.showLabels]);
 
   const labels = useMemo(
     () => (hero.labels || []).filter((l) => l.visible).sort((a, b) => a.order - b.order).slice(0, 4),
@@ -219,18 +289,12 @@ export default function Hero3D() {
   );
 
   const modelUrl = (isMobile && hero.modelUrlMobile) ? hero.modelUrlMobile : hero.modelUrl || '';
+  const modelType = hero.modelType === 'speaker' ? 'speaker' : 'dj_mixer';
   const quality: 'high' | 'low' = isMobile ? 'low' : 'high';
   const dpr: [number, number] = isMobile ? [1, 1.4] : [1, 2];
+  const background = hero.background || '#0A0A0B';
 
-  // Static, still-premium presentation when the device or the visitor opts out of motion.
   const staticHero = reduced || (isMobile && !hero.enabledOnMobile);
-
-  const LABEL_POS = [
-    { left: '8%', top: '30%' },
-    { right: '8%', top: '22%' },
-    { left: '10%', bottom: '26%' },
-    { right: '9%', bottom: '20%' },
-  ];
 
   return (
     <section
@@ -239,11 +303,10 @@ export default function Hero3D() {
       style={{ height: `${sectionHeight}vh` }}
       aria-label={L(hero.title)}
     >
-      <div className="sticky top-0 h-[100svh] overflow-hidden" style={{ background: hero.background || '#0A0A0B' }}>
-        {/* Depth: a restrained radial pool of light behind the product */}
+      <div className="sticky top-0 h-[100svh] overflow-hidden" style={{ background }}>
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255,255,255,0.055), transparent 70%)' }}
+          style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 48%, rgba(255,255,255,0.06), transparent 70%)' }}
           aria-hidden="true"
         />
 
@@ -255,37 +318,52 @@ export default function Hero3D() {
             dpr={dpr}
             shadows={quality === 'high'}
             gl={{ antialias: quality === 'high', powerPreference: 'high-performance', alpha: true }}
-            camera={{ fov: 34, position: [0, 0.15, hero.cameraDistance || 6.2] }}
-            onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.05; }}
+            camera={{ fov: 36, position: [0, 1.15, hero.cameraDistance || 5.6] }}
+            onCreated={({ gl }) => {
+              gl.toneMapping = THREE.ACESFilmicToneMapping;
+              gl.toneMappingExposure = 1.1;
+            }}
           >
             <Suspense fallback={null}>
               <Scene
                 progress={progress}
                 explode={explode}
                 spin={spin}
+                tilt={tilt}
+                modelType={modelType}
                 modelUrl={modelUrl || undefined}
-                cameraDistance={hero.cameraDistance || 6.2}
+                cameraDistance={hero.cameraDistance || 5.6}
                 scale={hero.initialScale || 1}
-                rotationY={hero.initialRotationY ?? -0.35}
+                rotationY={hero.initialRotationY ?? -0.28}
                 explodeDistance={(hero.explodeDistance || 1) * (hero.intensity || 1)}
                 accentLight={hero.accentLight}
                 accent={settings.accentColor}
+                background={background}
                 quality={quality}
               />
             </Suspense>
           </Canvas>
         )}
 
+        {/* Studio vignettes: keep the console reading against the page above and below */}
+        <div className="pointer-events-none absolute top-0 inset-x-0 h-28"
+             style={{ background: `linear-gradient(to bottom, ${background}, transparent)` }} aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-0 inset-x-0 h-28"
+             style={{ background: `linear-gradient(to top, ${background}, transparent)` }} aria-hidden="true" />
+
         {!ready && modelUrl && <LoadingOverlay onDone={() => setReady(true)} />}
 
         {/* Stage 1 — headline */}
-        <div ref={introRef} className="absolute inset-0 z-10 flex items-center pointer-events-none">
-          <div className="container-x w-full">
-            <div className="max-w-2xl pointer-events-auto">
-              <p className="eyebrow mb-6">{L(settings.siteName)}</p>
-              <h1 className="text-[2.6rem] leading-[1.03] sm:text-6xl xl:text-7xl">{L(hero.title)}</h1>
-              <p className="mt-6 text-lg text-[#9A9AA0] max-w-lg leading-relaxed">{L(hero.subtitle)}</p>
-              <div className="mt-10 flex flex-wrap gap-4">
+        <div ref={introRef} className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <div className="container-x w-full text-center">
+            <div className="max-w-3xl mx-auto pointer-events-auto">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#26262B] bg-[#0E0E10]/80 backdrop-blur-sm text-[var(--accent)] eyebrow !text-[10px] mb-7">
+                <Sparkles className="w-3 h-3" aria-hidden="true" />
+                {L(settings.siteName)}
+              </span>
+              <h1 className="text-[2.4rem] leading-[1.05] sm:text-6xl xl:text-7xl">{L(hero.title)}</h1>
+              <p className="mt-6 text-lg text-[#9A9AA0] max-w-xl mx-auto leading-relaxed">{L(hero.subtitle)}</p>
+              <div className="mt-10 flex flex-wrap gap-4 justify-center">
                 <Link to={href(lang, hero.ctaUrl)} className="btn btn-primary">{L(hero.ctaLabel)}</Link>
                 <Link to={href(lang, hero.ctaSecondaryUrl)} className="btn btn-ghost">{L(hero.ctaSecondaryLabel)}</Link>
               </div>
@@ -293,24 +371,37 @@ export default function Hero3D() {
           </div>
         </div>
 
-        {/* Stage 4 — technical labels around the exploded product */}
+        {/* Stage 3 — technical labels beside the exploded console */}
         {hero.showLabels && !staticHero && (
-          <div ref={labelsRef} className="absolute inset-0 z-10 hidden md:block" style={{ opacity: 0 }}>
-            {labels.map((label, i) => (
-              <div key={label.id} className="absolute max-w-[220px]" style={LABEL_POS[i % LABEL_POS.length]}>
-                <div className="w-8 h-px bg-[var(--accent)] mb-3" />
-                <p className="font-display text-sm tracking-wide">{L(label.title)}</p>
-                <p className="text-xs text-[#8C8C93] mt-1 leading-relaxed">{L(label.text)}</p>
+          <div ref={labelsRef} className="absolute inset-0 z-10 hidden md:flex items-center" style={{ opacity: 0 }}>
+            <div className="container-x w-full flex justify-between gap-8">
+              <div className="flex flex-col gap-5 max-w-[240px]">
+                {labels.slice(0, 2).map((label) => (
+                  <div key={label.id} className="p-4 border border-[#26262B] bg-[#0C0C0E]/85 backdrop-blur-sm">
+                    <div className="w-6 h-px bg-[var(--accent)] mb-3" />
+                    <p className="font-display text-sm">{L(label.title)}</p>
+                    <p className="text-xs text-[#8C8C93] mt-1.5 leading-relaxed">{L(label.text)}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+              <div className="flex flex-col gap-5 max-w-[240px]">
+                {labels.slice(2, 4).map((label) => (
+                  <div key={label.id} className="p-4 border border-[#26262B] bg-[#0C0C0E]/85 backdrop-blur-sm">
+                    <div className="w-6 h-px bg-[var(--accent)] mb-3" />
+                    <p className="font-display text-sm">{L(label.title)}</p>
+                    <p className="text-xs text-[#8C8C93] mt-1.5 leading-relaxed">{L(label.text)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {/* Stage 5 — rental storytelling */}
-        <div ref={storyRef} className="absolute inset-0 z-10 flex items-end pb-20 md:pb-28 pointer-events-none" style={{ opacity: 0 }}>
-          <div className="container-x w-full">
-            <h2 className="text-2xl md:text-4xl max-w-2xl">{L(hero.storyTitle)}</h2>
-            <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+        <div ref={storyRef} className="absolute inset-0 z-10 flex items-end pb-24 md:pb-28 pointer-events-none" style={{ opacity: 0 }}>
+          <div className="container-x w-full text-center">
+            <h2 className="text-2xl md:text-4xl max-w-2xl mx-auto">{L(hero.storyTitle)}</h2>
+            <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 justify-center">
               {(hero.storyItems || []).map((s) => (
                 <li key={s.id} className="text-sm text-[#9A9AA0] flex items-center gap-2">
                   <span className="w-1 h-1 bg-[var(--accent)]" aria-hidden="true" />
@@ -324,27 +415,32 @@ export default function Hero3D() {
         {/* Stage 7 — final CTA */}
         <div ref={finalRef} className="absolute inset-0 z-10 flex items-center justify-center text-center pointer-events-none" style={{ opacity: 0 }}>
           <div className="container-x pointer-events-auto">
-            <h2 className="text-3xl md:text-6xl max-w-3xl mx-auto">{L(hero.finalTitle)}</h2>
-            <div className="mt-10 flex flex-wrap gap-4 justify-center">
-              <Link to={href(lang, hero.ctaUrl)} className="btn btn-primary">{L(hero.ctaLabel)}</Link>
-              <Link to={href(lang, hero.ctaSecondaryUrl)} className="btn btn-ghost">{L(hero.ctaSecondaryLabel)}</Link>
+            <div className="max-w-3xl mx-auto border border-[#1E1E22] bg-[#0A0A0B]/70 backdrop-blur-sm p-8 md:p-12">
+              <h2 className="text-3xl md:text-5xl">{L(hero.finalTitle)}</h2>
+              <div className="mt-9 flex flex-wrap gap-4 justify-center">
+                <Link to={href(lang, hero.ctaUrl)} className="btn btn-primary">{L(hero.ctaLabel)}</Link>
+                <Link to={href(lang, hero.ctaSecondaryUrl)} className="btn btn-ghost">{L(hero.ctaSecondaryLabel)}</Link>
+              </div>
             </div>
           </div>
         </div>
 
         {!staticHero && (
-          <div ref={hintRef} className="absolute bottom-7 left-0 right-0 z-10 flex justify-center pointer-events-none">
-            <span className="eyebrow flex items-center gap-3">
+          <div ref={hintRef} className="absolute bottom-8 left-0 right-0 z-10 flex justify-center pointer-events-none">
+            <span className="eyebrow flex items-center gap-2">
               {t('scroll')}
-              <span className="block w-10 h-px bg-[#3a3a41] relative overflow-hidden">
-                <span className={cx('absolute inset-y-0 left-0 w-3 bg-[var(--accent)]')} style={{ animation: 'srScroll 2.2s ease-in-out infinite' }} />
-              </span>
+              <ChevronDown className="w-3.5 h-3.5 animate-bounce" aria-hidden="true" />
             </span>
           </div>
         )}
-      </div>
 
-      <style>{`@keyframes srScroll { 0%{transform:translateX(-12px)} 50%{transform:translateX(40px)} 100%{transform:translateX(-12px)} }`}</style>
+        {/* Scroll progress through the sequence */}
+        {!staticHero && (
+          <div className="absolute bottom-0 inset-x-0 h-px bg-[#1A1A1D] z-20" aria-hidden="true">
+            <div ref={barRef} className="h-full bg-[var(--accent)]" style={{ width: '0%' }} />
+          </div>
+        )}
+      </div>
     </section>
   );
 }

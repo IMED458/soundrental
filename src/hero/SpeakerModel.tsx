@@ -4,6 +4,7 @@ import { RoundedBox } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import * as THREE from 'three';
+import type { ModelProps } from './modelTypes';
 
 export interface PartAnchor { id: string; position: [number, number, number]; }
 
@@ -43,15 +44,7 @@ function useMaterials() {
   }), []);
 }
 
-interface ModelProps {
-  /** 0 = assembled, 1 = fully exploded. */
-  explode: React.MutableRefObject<number>;
-  /** Extra rotation driven by scroll, in radians. */
-  spin: React.MutableRefObject<number>;
-  distance: number;
-  scale: number;
-  baseRotationY: number;
-}
+
 
 /** Built-in procedural PA speaker — used until an administrator uploads a GLB. */
 export function ProceduralSpeaker({ explode, spin, distance, scale, baseRotationY }: ModelProps) {

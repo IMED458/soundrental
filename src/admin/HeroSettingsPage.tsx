@@ -6,7 +6,7 @@ import { mergeSettings } from '../lib/settings';
 import { uploadMedia } from '../lib/media';
 import type { HeroSettings } from '../lib/types';
 import { uid } from '../lib/utils';
-import { Field, ImageField, Input, LocField, Panel, Toggle, useToast, useUnsavedWarning } from './ui';
+import { Field, ImageField, Input, LocField, Panel, Select, Toggle, useToast, useUnsavedWarning } from './ui';
 
 function ModelField({
   label, value, onChange, hint,
@@ -113,6 +113,13 @@ export function HeroSettingsPage() {
       </Panel>
 
       <Panel title="Model">
+        <Field label="Built-in product" hint="Used when no GLB is uploaded below.">
+          <Select value={h.modelType ?? 'dj_mixer'}
+                  onChange={(e) => set('modelType', e.target.value as HeroSettings['modelType'])}>
+            <option value="dj_mixer">DJ controller / mixer</option>
+            <option value="speaker">PA speaker</option>
+          </Select>
+        </Field>
         <ModelField label="Desktop 3D model" value={h.modelUrl} onChange={(v) => set('modelUrl', v)}
                     hint="GLB or GLTF. Leave empty to use the built-in PA speaker. Each top-level object in the file becomes one exploded part." />
         <ModelField label="Mobile 3D model (lighter)" value={h.modelUrlMobile} onChange={(v) => set('modelUrlMobile', v)}

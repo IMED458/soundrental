@@ -24,8 +24,18 @@ function Grid({ children, cols = 4 }: { children: React.ReactNode; cols?: 2 | 3 
   return <div className={`grid gap-px bg-[#141417] ${map[cols]} [&>*]:bg-[#0A0A0B]`}>{children}</div>;
 }
 
-function Band({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <section className={`container-x py-20 md:py-28 ${className}`}>{children}</section>;
+/**
+ * Alternating surface tones with hairline rules give the page a steady editorial
+ * rhythm instead of one uninterrupted black field.
+ */
+function Band({
+  children, tone = 'base', className = '',
+}: { children: React.ReactNode; tone?: 'base' | 'raised'; className?: string }) {
+  return (
+    <section className={`border-b border-[#141417] ${tone === 'raised' ? 'bg-[#0C0C0F]' : 'bg-[#0A0A0B]'}`}>
+      <div className={`container-x py-20 md:py-28 ${className}`}>{children}</div>
+    </section>
+  );
 }
 
 export function Home() {
@@ -65,7 +75,8 @@ export function Home() {
     return faq ? { '@context': 'https://schema.org', '@graph': [org, faq] } : org;
   }, [settings, faqs, lang, L]);
 
-  const renderSection = (s: HomepageSection) => {
+  const renderSection = (s: HomepageSection, index: number) => {
+    const tone: 'base' | 'raised' = index % 2 === 1 ? 'raised' : 'base';
     const title = L(s.title);
     const subtitle = L(s.subtitle);
 
@@ -75,7 +86,7 @@ export function Home() {
 
       case 'intro':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <Reveal>
               <div className="grid md:grid-cols-12 gap-10">
                 <div className="md:col-span-5">
@@ -94,7 +105,7 @@ export function Home() {
 
       case 'categories':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading eyebrow={t('nav_equipment')} title={title} subtitle={subtitle}
               action={<Link to={href(lang, '/equipment')} className="btn btn-ghost">{t('viewAll')}</Link>} />
             {(categories as Category[]).length ? (
@@ -109,7 +120,7 @@ export function Home() {
 
       case 'featured':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading eyebrow={t('featured')} title={title} subtitle={subtitle}
               action={<Link to={href(lang, '/equipment')} className="btn btn-ghost">{t('viewAll')}</Link>} />
             {featured.length ? (
@@ -126,7 +137,7 @@ export function Home() {
 
       case 'services':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading eyebrow={t('nav_services')} title={title} subtitle={subtitle}
               action={<Link to={href(lang, '/services')} className="btn btn-ghost">{t('viewAll')}</Link>} />
             {(services as Service[]).length ? (
@@ -141,7 +152,7 @@ export function Home() {
 
       case 'packages':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading eyebrow={t('nav_packages')} title={title} subtitle={subtitle}
               action={<Link to={href(lang, '/packages')} className="btn btn-ghost">{t('viewAll')}</Link>} />
             {(packages as RentalPackage[]).length ? (
@@ -156,7 +167,7 @@ export function Home() {
 
       case 'why':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title} subtitle={subtitle} />
             <div className="grid md:grid-cols-3 gap-px bg-[#141417] [&>*]:bg-[#0A0A0B]">
               {(s.items ?? []).map((it, i) => (
@@ -178,7 +189,7 @@ export function Home() {
         const list = projects as Project[];
         if (!list.length) return null;
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading eyebrow={t('nav_projects')} title={title} subtitle={subtitle}
               action={<Link to={href(lang, '/projects')} className="btn btn-ghost">{t('viewAll')}</Link>} />
             <div className="grid md:grid-cols-2 gap-10 md:gap-14">
@@ -210,7 +221,7 @@ export function Home() {
 
       case 'process':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title} subtitle={subtitle} />
             <ol className="grid md:grid-cols-4 gap-px bg-[#141417] [&>*]:bg-[#0A0A0B]">
               {(s.items ?? []).map((it, i) => (
@@ -232,7 +243,7 @@ export function Home() {
       case 'stats':
         if (!s.items?.length) return null;
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
               {s.items.map((it) => (
                 <Reveal key={it.id}>
@@ -247,7 +258,7 @@ export function Home() {
       case 'clients':
         if (!s.items?.length) return null;
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title} subtitle={subtitle} />
             <div className="flex flex-wrap items-center gap-10 opacity-60">
               {s.items.map((it) => it.image && (
@@ -261,7 +272,7 @@ export function Home() {
         const list = testimonials as Testimonial[];
         if (!list.length) return null;
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title} subtitle={subtitle} />
             <div className="grid md:grid-cols-3 gap-px bg-[#141417] [&>*]:bg-[#0A0A0B]">
               {list.map((tm, i) => (
@@ -284,7 +295,7 @@ export function Home() {
         const list = faqs as Faq[];
         if (!list.length) return null;
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title || t('faq')} subtitle={subtitle} />
             <Accordion items={list.map((f) => ({ id: f.id, q: L(f.question), a: L(f.answer) }))} />
           </Band>
@@ -308,7 +319,7 @@ export function Home() {
 
       case 'contact':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title || t('nav_contact')} subtitle={subtitle} />
             <ContactBlock />
           </Band>
@@ -316,7 +327,7 @@ export function Home() {
 
       case 'custom':
         return (
-          <Band key={s.id}>
+          <Band key={s.id} tone={tone}>
             <SectionHeading title={title} subtitle={subtitle} />
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {s.image && <Img src={s.image} alt={s.title} ratio="4/3" />}
