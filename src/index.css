@@ -88,6 +88,7 @@ h1, h2, h3, h4, .font-display {
     border: 1px solid transparent; cursor: pointer;
     transition: background-color .35s cubic-bezier(.22,1,.36,1), color .35s, border-color .35s, transform .35s;
   }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-primary { background: var(--accent); color: var(--accent-contrast); }
   .btn-primary:hover { filter: brightness(1.12); }
   .btn-ghost { border-color: #2C2C31; color: #F2EFE9; background: transparent; }

@@ -25,14 +25,16 @@ const smooth = (v: number) => v * v * (3 - 2 * v);
 
 /** Scroll timeline — the whole hero is a pure function of one progress value. */
 function stageValues(p: number) {
+  const explode = smooth(clamp01(band(p, 0.18, 0.42, 0.68, 0.88)));
   return {
     intro: band(p, -0.01, 0, 0.06, 0.16),
-    explode: smooth(clamp01(band(p, 0.18, 0.42, 0.68, 0.88))),
-    spin: (clamp01((p - 0.08) / 0.5)) * Math.PI * 0.55,
-    labels: band(p, 0.40, 0.47, 0.60, 0.66),
+    explode,
+    spin: clamp01((p - 0.08) / 0.5) * Math.PI * 0.22,
+    labels: band(p, 0.40, 0.47, 0.62, 0.68),
     story: band(p, 0.60, 0.67, 0.76, 0.83),
     final: band(p, 0.86, 0.93, 1.01, 1.02),
-    dolly: 1.14 - smooth(clamp01(p / 0.35)) * 0.14 + smooth(clamp01((p - 0.6) / 0.4)) * 0.06,
+    // Pull back while the cabinet is apart so the whole exploded view stays in frame.
+    dolly: 1.18 - 0.18 * smooth(clamp01(p / 0.18)) + 0.85 * explode,
   };
 }
 
@@ -43,10 +45,28 @@ function Rig({ progress, distance }: { progress: React.MutableRefObject<number>;
     const target = distance * dolly;
     const damp = 1 - Math.pow(0.002, delta);
     camera.position.z += (target - camera.position.z) * damp;
-    camera.position.y += (0.15 - camera.position.y) * damp;
+    camera.position.y += (0.25 - camera.position.y) * damp;
     camera.lookAt(0, 0, 0);
   });
   return null;
+}
+
+/**
+ * On wide screens the assembled product sits beside the headline rather than
+ * behind it, and slides back to centre as it comes apart.
+ */
+function Framing({ progress, children }: { progress: React.MutableRefObject<number>; children: React.ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  const { size } = useThree();
+  useFrame((_, delta) => {
+    const g = group.current;
+    if (!g) return;
+    const wide = size.width / size.height > 1.25;
+    const target = wide ? 1.35 * (1 - stageValues(progress.current).explode) : 0;
+    const damp = 1 - Math.pow(0.002, delta);
+    g.position.x += (target - g.position.x) * damp;
+  });
+  return <group ref={group}>{children}</group>;
 }
 
 function Drivers({
@@ -65,12 +85,13 @@ function Drivers({
 }
 
 function Scene({
-  progress, explode, spin, modelUrl, scale, rotationY, explodeDistance, accentLight, accent, quality,
+  progress, explode, spin, modelUrl, cameraDistance, scale, rotationY, explodeDistance, accentLight, accent, quality,
 }: {
   progress: React.MutableRefObject<number>;
   explode: React.MutableRefObject<number>;
   spin: React.MutableRefObject<number>;
   modelUrl?: string;
+  cameraDistance: number;
   scale: number;
   rotationY: number;
   explodeDistance: number;
@@ -80,25 +101,30 @@ function Scene({
 }) {
   return (
     <>
-      <ambientLight intensity={0.34} />
+      <ambientLight intensity={0.5} />
+      <hemisphereLight args={['#9FB4CC', '#0A0A0B', 0.6]} />
       <directionalLight
-        position={[-4, 6, 5]} intensity={2.1} color="#FFF6E8"
+        position={[-4, 6, 5]} intensity={2.6} color="#FFF6E8"
         castShadow={quality === 'high'} shadow-mapSize={[1024, 1024]}
       />
-      <directionalLight position={[5, 1, -3]} intensity={0.9} color="#8FA8C8" />
-      {accentLight && <pointLight position={[2.6, -1.4, 2.6]} intensity={22} color={accent} distance={11} decay={2} />}
+      <directionalLight position={[5, 1.5, -3]} intensity={1.4} color="#8FA8C8" />
+      {accentLight && <pointLight position={[3.6, -1.6, 3.4]} intensity={14} color={accent} distance={13} decay={2} />}
       <spotLight position={[0, 7, 2]} angle={0.5} penumbra={1} intensity={9} color="#FFFFFF" />
+      {/* Front fill so the baffle never reads as a black slab */}
+      <directionalLight position={[-1.5, 0.5, 6]} intensity={1.1} color="#E8ECF2" />
 
-      {modelUrl ? (
-        <GltfSpeaker url={modelUrl} explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
-      ) : (
-        <ProceduralSpeaker explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
-      )}
+      <Framing progress={progress}>
+        {modelUrl ? (
+          <GltfSpeaker url={modelUrl} explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
+        ) : (
+          <ProceduralSpeaker explode={explode} spin={spin} distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
+        )}
+      </Framing>
 
       {quality === 'high' && (
         <ContactShadows position={[0, -1.75, 0]} opacity={0.55} scale={9} blur={2.6} far={4} resolution={512} color="#000000" />
       )}
-      <Rig progress={progress} distance={5} />
+      <Rig progress={progress} distance={cameraDistance} />
       <Drivers progress={progress} explode={explode} spin={spin} />
     </>
   );
@@ -238,6 +264,7 @@ export default function Hero3D() {
                 explode={explode}
                 spin={spin}
                 modelUrl={modelUrl || undefined}
+                cameraDistance={hero.cameraDistance || 6.2}
                 scale={hero.initialScale || 1}
                 rotationY={hero.initialRotationY ?? -0.35}
                 explodeDistance={(hero.explodeDistance || 1) * (hero.intensity || 1)}

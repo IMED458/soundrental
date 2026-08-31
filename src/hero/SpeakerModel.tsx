@@ -18,15 +18,15 @@ export const LABEL_ANCHORS: PartAnchor[] = [
   { id: 'io', position: [1.2, -0.75, -1.35] },
 ];
 
-const DARK = '#17171A';
-const DARKER = '#101013';
-const METAL = '#3A3A40';
+const DARK = '#24242A';
+const DARKER = '#212127';
+const METAL = '#6E6E79';
 
 /** Layout of the built-in PA cabinet: rest pose plus the engineered explode offset. */
 const PARTS = [
-  { id: 'grille',   rest: [0, 0, 0.5],     explode: [0, 0.15, 1.45] },
-  { id: 'horn',     rest: [0, 0.72, 0.28],  explode: [0.85, 0.55, 0.9] },
-  { id: 'woofer',   rest: [0, -0.42, 0.24], explode: [-0.85, -0.42, 1.0] },
+  { id: 'grille',   rest: [0, 0, 0.5],     explode: [-0.45, 1.85, 0.7] },
+  { id: 'horn',     rest: [0, 0.72, 0.44],  explode: [1.25, 0.85, 1.05] },
+  { id: 'woofer',   rest: [0, -0.42, 0.42], explode: [-1.25, -0.6, 1.1] },
   { id: 'cabinet',  rest: [0, 0, 0],        explode: [0, 0, -0.15] },
   { id: 'amp',      rest: [0, -0.1, -0.42], explode: [0, -0.3, -1.15] },
   { id: 'io',       rest: [0, -0.72, -0.5], explode: [0.7, -0.95, -1.75] },
@@ -36,10 +36,10 @@ const PARTS = [
 
 function useMaterials() {
   return useMemo(() => ({
-    body: new THREE.MeshStandardMaterial({ color: DARK, roughness: 0.62, metalness: 0.22 }),
-    grille: new THREE.MeshStandardMaterial({ color: DARKER, roughness: 0.42, metalness: 0.66 }),
-    cone: new THREE.MeshStandardMaterial({ color: '#0C0C0E', roughness: 0.85, metalness: 0.05 }),
-    metal: new THREE.MeshStandardMaterial({ color: METAL, roughness: 0.3, metalness: 0.9 }),
+    body: new THREE.MeshStandardMaterial({ color: DARK, roughness: 0.6, metalness: 0.12 }),
+    grille: new THREE.MeshStandardMaterial({ color: DARKER, roughness: 0.45, metalness: 0.2 }),
+    cone: new THREE.MeshStandardMaterial({ color: '#141418', roughness: 0.8, metalness: 0.05, side: THREE.DoubleSide }),
+    metal: new THREE.MeshStandardMaterial({ color: METAL, roughness: 0.34, metalness: 0.5 }),
   }), []);
 }
 
@@ -86,6 +86,10 @@ export function ProceduralSpeaker({ explode, spin, distance, scale, baseRotation
         <mesh position={[0, 1.19, 0]} material={mats.metal}>
           <boxGeometry args={[1.5, 0.03, 0.9]} />
         </mesh>
+        {/* Recessed baffle: gives the cabinet a readable front face */}
+        <mesh position={[0, 0, 0.44]} material={mats.grille}>
+          <boxGeometry args={[1.42, 2.2, 0.04]} />
+        </mesh>
       </group>
 
       {/* Front grille */}
@@ -98,11 +102,11 @@ export function ProceduralSpeaker({ explode, spin, distance, scale, baseRotation
         <mesh rotation={[Math.PI / 2, 0, 0]} material={mats.metal}>
           <torusGeometry args={[0.56, 0.045, 12, 48]} />
         </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -0.16]} material={mats.cone}>
-          <coneGeometry args={[0.54, 0.34, 48, 1, true]} />
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.2]} material={mats.cone}>
+          <cylinderGeometry args={[0.5, 0.15, 0.42, 48, 1, true]} />
         </mesh>
-        <mesh position={[0, 0, 0.02]} material={mats.cone}>
-          <sphereGeometry args={[0.16, 24, 16]} />
+        <mesh position={[0, 0, -0.02]} material={mats.metal}>
+          <sphereGeometry args={[0.15, 24, 16]} />
         </mesh>
       </group>
 
