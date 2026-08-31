@@ -116,7 +116,8 @@ export function HeroSettingsPage() {
         <Field label="Built-in product" hint="Used when no GLB is uploaded below.">
           <Select value={h.modelType ?? 'dj_mixer'}
                   onChange={(e) => set('modelType', e.target.value as HeroSettings['modelType'])}>
-            <option value="dj_mixer">DJ controller / mixer</option>
+            <option value="dj_setup">Pioneer DJ studio rig (photoreal)</option>
+            <option value="dj_mixer">DJ controller (procedural)</option>
             <option value="speaker">PA speaker</option>
           </Select>
         </Field>

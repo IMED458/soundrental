@@ -42,8 +42,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     mapLink: '',
   },
   whatsapp: {
+    // Placeholder — replace it in Admin -> Website settings -> WhatsApp.
     enabled: true,
-    number: '',
+    number: '+995 555 12 34 56',
     floating: true,
     inHeader: true,
     defaultMessage: {
@@ -68,7 +69,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 export const DEFAULT_HERO: HeroSettings = {
   enabled: true,
   enabledOnMobile: true,
-  modelType: 'dj_mixer',
+  modelType: 'dj_setup',
   modelUrl: '',
   modelUrlMobile: '',
   fallbackImage: '',

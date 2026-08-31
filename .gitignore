@@ -4,3 +4,7 @@ dist
 .env.local
 .DS_Store
 *.log
+
+# Local 3D source assets (large .max/.fbx) stay out of the repo
+*.max
+*.FBX

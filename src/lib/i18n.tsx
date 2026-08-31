@@ -29,6 +29,7 @@ export const UI = {
     scroll: 'გადაახვიეთ', backToTop: 'ზემოთ', close: 'დახურვა', prev: 'წინა', next: 'შემდეგი',
     page404: 'გვერდი ვერ მოიძებნა', backHome: 'მთავარ გვერდზე', packageIncludes: 'პაკეტში შედის',
     faq: 'ხშირად დასმული კითხვები', menu: 'მენიუ', language: 'ენა',
+    whatsappCta: 'მოგვწერეთ WhatsApp-ში',
   },
   en: {
     nav_equipment: 'Equipment', nav_packages: 'Packages', nav_services: 'Services',
@@ -53,6 +54,7 @@ export const UI = {
     scroll: 'Scroll', backToTop: 'Back to top', close: 'Close', prev: 'Previous', next: 'Next',
     page404: 'Page not found', backHome: 'Back to homepage', packageIncludes: 'This package includes',
     faq: 'Frequently asked questions', menu: 'Menu', language: 'Language',
+    whatsappCta: 'Chat on WhatsApp',
   },
   ru: {
     nav_equipment: 'Оборудование', nav_packages: 'Пакеты', nav_services: 'Услуги',
@@ -77,6 +79,7 @@ export const UI = {
     scroll: 'Прокрутите', backToTop: 'Наверх', close: 'Закрыть', prev: 'Назад', next: 'Далее',
     page404: 'Страница не найдена', backHome: 'На главную', packageIncludes: 'В пакет входит',
     faq: 'Частые вопросы', menu: 'Меню', language: 'Язык',
+    whatsappCta: 'Написать в WhatsApp',
   },
 } as const;
 

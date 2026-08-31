@@ -245,7 +245,7 @@ export interface HeroSettings {
   enabled: boolean;
   enabledOnMobile: boolean;
   /** Which built-in product the hero disassembles. A GLB upload overrides it. */
-  modelType: 'dj_mixer' | 'speaker';
+  modelType: 'dj_setup' | 'dj_mixer' | 'speaker';
   modelUrl?: string;          // GLB/GLTF; empty = built-in procedural PA speaker
   modelUrlMobile?: string;
   fallbackImage?: string;

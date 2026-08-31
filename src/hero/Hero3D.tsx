@@ -9,6 +9,7 @@ import { useSettings } from '../lib/settings';
 import { href } from '../lib/links';
 import { GltfSpeaker, ProceduralSpeaker } from './SpeakerModel';
 import { ProceduralDJMixer } from './DJMixerModel';
+import { DJ_SETUP_URL, GltfDJSetup } from './DJSetupModel';
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const smooth = (v: number) => v * v * (3 - 2 * v);
@@ -94,8 +95,13 @@ function Drivers({
  * drops it lower on portrait viewports so the headline stays readable.
  */
 function ModelFrame({
-  width, explode, children,
-}: { width: number; explode: React.MutableRefObject<number>; children: React.ReactNode }) {
+  width, explode, spreadGrowth = 0.6, children,
+}: {
+  width: number;
+  explode: React.MutableRefObject<number>;
+  spreadGrowth?: number;
+  children: React.ReactNode;
+}) {
   const group = useRef<THREE.Group>(null);
   const { camera, size } = useThree();
   useFrame((_, delta) => {
@@ -105,7 +111,7 @@ function ModelFrame({
     const aspect = size.width / size.height;
     const visibleWidth = 2 * cam.position.z * Math.tan((cam.fov * Math.PI) / 360) * aspect;
     // The exploded arrangement is much wider than the assembled product.
-    const spread = width * (1 + 0.6 * explode.current);
+    const spread = width * (1 + spreadGrowth * explode.current);
     const fit = Math.min(1, (visibleWidth * 0.78) / spread);
     const damp = 1 - Math.pow(0.002, delta);
     const next = g.scale.x + (fit - g.scale.x) * damp;
@@ -133,7 +139,7 @@ interface SceneProps {
   explode: React.MutableRefObject<number>;
   spin: React.MutableRefObject<number>;
   tilt: React.MutableRefObject<number>;
-  modelType: 'dj_mixer' | 'speaker';
+  modelType: 'dj_setup' | 'dj_mixer' | 'speaker';
   modelUrl?: string;
   cameraDistance: number;
   scale: number;
@@ -150,12 +156,13 @@ function Scene({
   explodeDistance, accentLight, accent, background, quality,
 }: SceneProps) {
   const isMixer = modelType === 'dj_mixer' && !modelUrl;
+  const isSetup = modelType === 'dj_setup' && !modelUrl;
   return (
     <>
       <fogExp2 attach="fog" args={[background, 0.055]} />
 
-      <ambientLight intensity={0.5} />
-      <hemisphereLight args={['#9FB4CC', '#0A0A0B', 0.6]} />
+      <ambientLight intensity={0.22} />
+      <hemisphereLight args={['#9FB4CC', '#0A0A0B', 0.28]} />
       <directionalLight
         position={[-4, 6, 5]} intensity={2.6} color="#FFF6E8"
         castShadow={quality === 'high'} shadow-mapSize={[1024, 1024]}
@@ -167,10 +174,13 @@ function Scene({
         <pointLight position={[3.2, -0.6, 3.2]} intensity={16} color={accent} distance={14} decay={2} />
       )}
 
-      <ModelFrame width={isMixer ? 3.3 : 1.9} explode={explode}>
+      <ModelFrame width={isSetup ? 3.9 : isMixer ? 3.3 : 1.9} spreadGrowth={isSetup ? 0.2 : 0.6} explode={explode}>
         {modelUrl ? (
           <GltfSpeaker url={modelUrl} explode={explode} spin={spin} distance={explodeDistance}
                        scale={scale} baseRotationY={rotationY} />
+        ) : isSetup ? (
+          <GltfDJSetup url={DJ_SETUP_URL} explode={explode} spin={spin} tilt={tilt}
+                       distance={explodeDistance} scale={scale} baseRotationY={rotationY} />
         ) : isMixer ? (
           <ProceduralDJMixer
             explode={explode} spin={spin} tilt={tilt} distance={explodeDistance}
@@ -184,8 +194,8 @@ function Scene({
 
       {quality === 'high' && (
         <>
-          <StudioFloor y={isMixer ? -1.5 : -1.9} />
-          <ContactShadows position={[0, isMixer ? -1.42 : -1.78, 0]} opacity={0.5}
+          <StudioFloor y={isMixer || isSetup ? -1.5 : -1.9} />
+          <ContactShadows position={[0, isMixer || isSetup ? -1.42 : -1.78, 0]} opacity={0.5}
                           scale={11} blur={2.8} far={5} resolution={512} color="#000000" />
         </>
       )}
@@ -289,7 +299,7 @@ export default function Hero3D() {
   );
 
   const modelUrl = (isMobile && hero.modelUrlMobile) ? hero.modelUrlMobile : hero.modelUrl || '';
-  const modelType = hero.modelType === 'speaker' ? 'speaker' : 'dj_mixer';
+  const modelType = hero.modelType === 'speaker' || hero.modelType === 'dj_mixer' ? hero.modelType : 'dj_setup';
   const quality: 'high' | 'low' = isMobile ? 'low' : 'high';
   const dpr: [number, number] = isMobile ? [1, 1.4] : [1, 2];
   const background = hero.background || '#0A0A0B';
@@ -355,7 +365,11 @@ export default function Hero3D() {
 
         {/* Stage 1 — headline */}
         <div ref={introRef} className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-          <div className="container-x w-full text-center">
+          {/* Scrim: keeps the headline legible over the rig without hiding it */}
+          <div className="absolute inset-0"
+               style={{ background: `linear-gradient(to bottom, ${background}CC, ${background}66 45%, ${background}CC)` }}
+               aria-hidden="true" />
+          <div className="container-x w-full text-center relative">
             <div className="max-w-3xl mx-auto pointer-events-auto">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#26262B] bg-[#0E0E10]/80 backdrop-blur-sm text-[var(--accent)] eyebrow !text-[10px] mb-7">
                 <Sparkles className="w-3 h-3" aria-hidden="true" />
