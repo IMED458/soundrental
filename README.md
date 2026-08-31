@@ -71,8 +71,22 @@ npm run deploy                             # gh-pages -d dist
 ```
 
 `VITE_BASE` controls the base path: `/soundrental/` for a GitHub Pages project site, `/` for a
-custom domain. When you move to a custom domain, also set `segments = 0` in `public/404.html`
-(that file restores deep links, which GitHub Pages otherwise 404s).
+custom domain. `dist/404.html` (which restores deep links GitHub Pages would otherwise 404) and
+`dist/.nojekyll` are generated from that base at build time — nothing to edit by hand.
+
+### GitHub Pages (automatic)
+
+`.github/workflows/deploy.yml` builds and publishes `dist/` on every push to `main`. Enable it
+once in **Settings → Pages → Source → GitHub Actions**. The base path is derived from the
+repository name; add a repository variable `VITE_BASE=/` when moving to a custom domain.
+
+Firebase keys are read from repository **secrets** (`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_*`).
+Without them the site still builds and renders with the bundled default content — only the
+Firestore-backed content and `/admin` stay offline.
+
+> A blank/white page on the deployed URL almost always means the built `dist/` is not what is
+> being served — e.g. Pages set to *Deploy from a branch → main /(root)*, which serves the source
+> `index.html` and its unbuilt `/src/main.tsx`. Switch the source to GitHub Actions.
 
 ## Content model
 
