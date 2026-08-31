@@ -14,9 +14,48 @@
     />
     <title>AUDIOKRAFT — Sound &amp; DJ Equipment Rental</title>
     <meta name="description" content="AUDIOKRAFT — professional sound, DJ and event equipment rental." />
+    <style>
+      /* Painted before the bundle arrives, so a slow or failed boot is never a white void. */
+      html { background: #0A0A0B; color-scheme: dark; }
+      body { margin: 0; background: #0A0A0B; color: #F2EFE9; font-family: system-ui, sans-serif; }
+      #boot {
+        position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+        padding: 24px; gap: 12px; align-content: center; background: #0A0A0B; z-index: 9999;
+      }
+      #boot p { margin: 0; max-width: 34rem; line-height: 1.6; font-size: 14px; color: #9A9AA0; }
+      #boot .mark { font-size: 13px; letter-spacing: 0.34em; color: #C8963E; }
+      #boot .why { display: none; }
+      #boot.stalled .why { display: block; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <div id="boot">
+      <div class="mark">AUDIOKRAFT</div>
+      <p class="why">
+        გვერდი ვერ ჩაიტვირთა. სცადეთ განახლება (Ctrl/Cmd + Shift + R).<br />
+        The page failed to load. If this persists, the site build may not be deployed correctly.
+      </p>
+    </div>
+    <noscript>
+      <p style="padding: 24px; text-align: center">
+        საიტის სანახავად ჩართეთ JavaScript. · Please enable JavaScript to view this site.
+      </p>
+    </noscript>
+    <script>
+      // Reveal the explanation only if the app has not mounted in time.
+      setTimeout(function () {
+        var boot = document.getElementById('boot');
+        if (boot) boot.classList.add('stalled');
+      }, 6000);
+      window.addEventListener('error', function (e) {
+        if (e.target && e.target.tagName === 'SCRIPT') {
+          var boot = document.getElementById('boot');
+          if (boot) boot.classList.add('stalled');
+        }
+      }, true);
+    </script>
     <script>
       // Restore the deep link stashed by 404.html before the router boots.
       (function () {
