@@ -91,11 +91,12 @@ export function Header() {
         )}
       >
         <div className="container-x flex items-center justify-between" style={{ height: 'var(--nav-h)' }}>
-          <Link to={`/${lang}`} className="flex items-center gap-3 shrink-0" aria-label={siteName}>
-            {settings.logo ? (
-              <img src={settings.logo} alt={siteName} className="h-7 md:h-8 w-auto object-contain" />
-            ) : (
-              <span className="font-display text-base md:text-lg tracking-[0.02em]">{siteName}</span>
+          <Link to={`/${lang}`} className="flex items-center gap-2.5 shrink-0" aria-label={siteName}>
+            {settings.logo && (
+              <img src={settings.logo} alt="" className="h-8 md:h-9 w-auto object-contain" />
+            )}
+            {(!settings.logo || settings.showSiteNameWithLogo !== false) && (
+              <span className="font-display text-base md:text-lg tracking-[0.14em] uppercase">{siteName}</span>
             )}
           </Link>
 

@@ -84,6 +84,10 @@ export function SettingsPage() {
 
       <Panel title="Branding">
         <ImageField label="Logo" value={s.logo} onChange={(v) => set('logo', v)} hint="Shown in the header. SVG or PNG with transparency works best." />
+        <Toggle label="Show the site name next to the logo"
+                hint="Keep this on for a square logo mark; turn it off if your logo already contains the name."
+                checked={s.showSiteNameWithLogo !== false}
+                onChange={(v) => set('showSiteNameWithLogo', v)} />
         <ImageField label="Light logo" value={s.logoLight} onChange={(v) => set('logoLight', v)} />
         <ImageField label="Footer logo" value={s.logoFooter} onChange={(v) => set('logoFooter', v)} />
         <ImageField label="Favicon" value={s.favicon} onChange={(v) => set('favicon', v)} hint="Square, at least 64×64." />

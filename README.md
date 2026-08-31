@@ -1,4 +1,4 @@
-# Sound, DJ & Event Equipment Rental — website + admin panel
+# AUDIOKRAFT — sound, DJ & event equipment rental
 
 A production-ready multilingual (KA / EN / RU) website for a professional sound, DJ and event
 equipment rental company, with a full admin panel and a scroll-driven 3D hero.
@@ -102,9 +102,16 @@ Scrolling back reverses it; stopping stops it. Progress is measured from the sec
 `getBoundingClientRect()` every frame — that stays correct under smooth scrolling, resizes and hot
 reloads, where a cached scroll-trigger range silently sticks at zero.
 
-Two built-in products ship with it, selectable in **Admin → 3D hero settings**:
+Three built-in products ship with it, selectable in **Admin → 3D hero settings**:
 
-- **DJ controller** (default) — two jog wheels, four channel strips with EQ and faders, crossfader,
+- **Pioneer studio rig** (default) — a real, converted CAD model: an all-in-one controller, a
+  4-channel mixer, a sampler, a laptop and a PA speaker on a tripod. Its V-Ray materials do not
+  survive the glTF export, so they are re-mapped in code onto a studio palette (body panels,
+  machined aluminium, matte rubber), with backlit control strips in colour, a matte-black speaker
+  cabinet and metallic grille, and AUDIOKRAFT artwork on the displays. Exploding it separates the
+  individual pieces of equipment — what a full DJ booth is made of.
+
+- **DJ controller** (procedural) — two jog wheels, four channel strips with EQ and faders, crossfader,
   performance pads, FX section with display, brushed top plate, chassis, internal board and rear
   I/O. Being a wide flat console, it separates into *layers* along Y, the way a technical drawing of
   a console reads.

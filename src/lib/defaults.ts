@@ -5,8 +5,12 @@ import type { HeroSettings, HomepageSection, SiteSettings } from './types';
  * overwritten the moment an administrator saves the corresponding admin form.
  */
 export const DEFAULT_SETTINGS: SiteSettings = {
-  siteName: { ka: 'კომპანიის სახელი', en: 'Company Name', ru: 'Название компании' },
-  companyName: 'Company Name',
+  siteName: { ka: 'AUDIOKRAFT', en: 'AUDIOKRAFT', ru: 'AUDIOKRAFT' },
+  companyName: 'AUDIOKRAFT',
+  logo: `${import.meta.env.BASE_URL}brand/audiokraft-mark.png`,
+  logoFooter: `${import.meta.env.BASE_URL}brand/audiokraft-mark.png`,
+  favicon: `${import.meta.env.BASE_URL}favicon.png`,
+  showSiteNameWithLogo: true,
   accentColor: '#C8963E',
   defaultLang: 'ka',
   seoTitle: {
@@ -20,9 +24,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     ru: 'Звуковые системы, DJ-оборудование, свет и полное техническое обеспечение мероприятий.',
   },
   copyright: {
-    ka: '© Company Name. ყველა უფლება დაცულია.',
-    en: '© Company Name. All rights reserved.',
-    ru: '© Company Name. Все права защищены.',
+    ka: '© AUDIOKRAFT. ყველა უფლება დაცულია.',
+    en: '© AUDIOKRAFT. All rights reserved.',
+    ru: '© AUDIOKRAFT. Все права защищены.',
   },
   footerDescription: {
     ka: 'პროფესიონალური ხმის, DJ და ღონისძიების აპარატურის გაქირავება.',

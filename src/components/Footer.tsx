@@ -22,11 +22,16 @@ export function Footer() {
     <footer className="border-t border-[#1A1A1D] bg-[#08080A] mt-24">
       <div className="container-x py-16 md:py-20 grid gap-12 md:grid-cols-12">
         <div className="md:col-span-5">
-          {settings.logoFooter || settings.logo ? (
-            <img src={settings.logoFooter || settings.logo} alt={L(settings.siteName)} className="h-8 w-auto object-contain mb-6" />
-          ) : (
-            <p className="font-display text-xl mb-6">{L(settings.siteName) || settings.companyName}</p>
-          )}
+          <div className="flex items-center gap-3 mb-6">
+            {(settings.logoFooter || settings.logo) && (
+              <img src={settings.logoFooter || settings.logo} alt="" className="h-10 w-auto object-contain" />
+            )}
+            {(!settings.logo || settings.showSiteNameWithLogo !== false) && (
+              <p className="font-display text-xl tracking-[0.14em] uppercase">
+                {L(settings.siteName) || settings.companyName}
+              </p>
+            )}
+          </div>
           <p className="text-[#8C8C93] leading-relaxed max-w-sm">{L(settings.footerDescription)}</p>
           <WhatsAppLink className="btn btn-ghost mt-8 inline-flex" />
         </div>

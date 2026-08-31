@@ -212,6 +212,8 @@ export interface SiteSettings {
   logo?: string;
   logoLight?: string;
   logoFooter?: string;
+  /** Show the site name next to a square logo mark. */
+  showSiteNameWithLogo?: boolean;
   favicon?: string;
   accentColor: string;
   defaultLang: Lang;
