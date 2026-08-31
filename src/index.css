@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink:        #08080A;
+  --color-void:       #0A0A0B;
+  --color-charcoal:   #121214;
+  --color-graphite:   #1A1A1D;
+  --color-slate:      #232327;
+  --color-line:       #2C2C31;
+  --color-line-soft:  #202024;
+  --color-ivory:      #F2EFE9;
+  --color-muted:      #9A9AA0;
+  --color-accent:     #C8963E;
+
+  --font-display: "Space Grotesk", "Noto Sans Georgian", system-ui, sans-serif;
+  --font-body: "Inter", "Noto Sans Georgian", system-ui, sans-serif;
+}
+
+:root {
+  --accent: #C8963E;
+  --accent-contrast: #0A0A0B;
+  --nav-h: 76px;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html {
+  background: #0A0A0B;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #0A0A0B;
+  color: #F2EFE9;
+  font-family: "Inter", "Noto Sans Georgian", system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+:lang(ka) body, [lang="ka"] {
+  font-family: "Noto Sans Georgian", "Inter", system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: "Space Grotesk", "Noto Sans Georgian", system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+::selection { background: var(--accent); color: #0A0A0B; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Restrained, industrial scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0A0A0B; }
+::-webkit-scrollbar-thumb { background: #2C2C31; border: 3px solid #0A0A0B; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a41; }
+
+@layer components {
+  .container-x { width: 100%; max-width: 1400px; margin-inline: auto; padding-inline: 1.25rem; }
+  @media (min-width: 768px) { .container-x { padding-inline: 2.5rem; } }
+  @media (min-width: 1280px) { .container-x { padding-inline: 4rem; } }
+
+  .eyebrow {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.6875rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #8C8C93;
+  }
+
+  .rule { height: 1px; background: #202024; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+    padding: 0.9rem 1.6rem;
+    font-family: "Space Grotesk", "Noto Sans Georgian", sans-serif;
+    font-size: 0.8125rem; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid transparent; cursor: pointer;
+    transition: background-color .35s cubic-bezier(.22,1,.36,1), color .35s, border-color .35s, transform .35s;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-contrast); }
+  .btn-primary:hover { filter: brightness(1.12); }
+  .btn-ghost { border-color: #2C2C31; color: #F2EFE9; background: transparent; }
+  .btn-ghost:hover { border-color: #55555d; background: #141417; }
+  .btn-solid { background: #F2EFE9; color: #0A0A0B; }
+  .btn-solid:hover { background: #fff; }
+
+  .field {
+    width: 100%;
+    background: #101012;
+    border: 1px solid #26262B;
+    color: #F2EFE9;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.9rem;
+    transition: border-color .2s;
+  }
+  .field::placeholder { color: #6A6A72; }
+  .field:focus { outline: none; border-color: var(--accent); }
+  .field-label {
+    display: block; font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase;
+    color: #8C8C93; margin-bottom: .4rem; font-family: "Space Grotesk", sans-serif;
+  }
+
+  .link-underline {
+    position: relative; display: inline-block;
+  }
+  .link-underline::after {
+    content: ""; position: absolute; left: 0; bottom: -3px; height: 1px; width: 100%;
+    background: currentColor; transform: scaleX(0); transform-origin: right;
+    transition: transform .45s cubic-bezier(.22,1,.36,1);
+  }
+  .link-underline:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+
+/* Scroll reveal — disabled entirely under reduced motion */
+.reveal { opacity: 0; transform: translateY(24px); }
+.reveal.in { opacity: 1; transform: none; transition: opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in { opacity: 1 !important; transform: none !important; transition: none !important; }
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* Admin surface — deliberately plainer than the marketing site */
+.admin-shell { background: #0E0E10; }
+.admin-card { background: #141417; border: 1px solid #232327; }

@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.active == true;
+    }
+    function isSuperAdmin() {
+      return isAdmin()
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    // Public website content: world-readable, admin-writable.
+    match /settings/{doc}      { allow read: if true; allow write: if isAdmin(); }
+    match /navigation/{doc}    { allow read: if true; allow write: if isAdmin(); }
+    match /homepageSections/{doc} { allow read: if true; allow write: if isAdmin(); }
+    match /categories/{doc}    { allow read: if true; allow write: if isAdmin(); }
+    match /equipment/{doc}     { allow read: if true; allow write: if isAdmin(); }
+    match /services/{doc}      { allow read: if true; allow write: if isAdmin(); }
+    match /packages/{doc}      { allow read: if true; allow write: if isAdmin(); }
+    match /projects/{doc}      { allow read: if true; allow write: if isAdmin(); }
+    match /pages/{doc}         { allow read: if true; allow write: if isAdmin(); }
+    match /faqs/{doc}          { allow read: if true; allow write: if isAdmin(); }
+    match /testimonials/{doc}  { allow read: if true; allow write: if isAdmin(); }
+    match /media/{doc}         { allow read: if true; allow write: if isAdmin(); }
+
+    // Leads: anyone may submit, only admins may read / manage.
+    match /contactRequests/{doc} {
+      allow create: if request.resource.data.keys().hasAll(['name','message','createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 200
+                    && request.resource.data.message.size() < 5000;
+      allow read, update, delete: if isAdmin();
+    }
+    match /quoteRequests/{doc} {
+      allow create: if request.resource.data.keys().hasAll(['name','createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 200;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admin users: an admin can read the roster; only a super admin may change it.
+    match /adminUsers/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if isSuperAdmin();
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
