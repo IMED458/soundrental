@@ -282,7 +282,9 @@ export function GltfDJSetup({
     const centre = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(centre);
-    cloned.position.set(-centre.x, -box.min.y, -centre.z);
+    // Centre on the origin in all three axes so the rig sits in the middle of
+    // the frame rather than resting on it.
+    cloned.position.set(-centre.x, -centre.y, -centre.z);
 
     // The rig is as tall as it is wide (speaker on a stand), so fit both axes.
     const fitScale = Math.min(

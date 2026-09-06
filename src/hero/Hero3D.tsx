@@ -67,8 +67,8 @@ function Rig({ progress, distance }: { progress: React.MutableRefObject<number>;
     const { dolly, explode } = stageValues(progress.current);
     const damp = 1 - Math.pow(0.002, delta);
     camera.position.z += (distance * dolly - camera.position.z) * damp;
-    camera.position.y += ((1.15 + explode * 0.55) - camera.position.y) * damp;
-    camera.lookAt(0, -0.3 + explode * 0.2, 0);
+    camera.position.y += ((0.85 + explode * 0.5) - camera.position.y) * damp;
+    camera.lookAt(0, explode * 0.15, 0);
   });
   return null;
 }
@@ -112,11 +112,11 @@ function ModelFrame({
     const visibleWidth = 2 * cam.position.z * Math.tan((cam.fov * Math.PI) / 360) * aspect;
     // The exploded arrangement is much wider than the assembled product.
     const spread = width * (1 + spreadGrowth * explode.current);
-    const fit = Math.min(1, (visibleWidth * 0.78) / spread);
+    const fit = Math.min(1, (visibleWidth * 0.86) / spread);
     const damp = 1 - Math.pow(0.002, delta);
     const next = g.scale.x + (fit - g.scale.x) * damp;
     g.scale.setScalar(next);
-    const targetY = aspect < 1 ? -0.95 : -0.35;
+    const targetY = aspect < 1 ? -0.25 : 0;
     g.position.y += (targetY - g.position.y) * damp;
   });
   return <group ref={group} position={[0, -0.35, 0]}>{children}</group>;
@@ -164,11 +164,11 @@ function Scene({
       <ambientLight intensity={0.22} />
       <hemisphereLight args={['#9FB4CC', '#0A0A0B', 0.28]} />
       <directionalLight
-        position={[-4, 6, 5]} intensity={2.6} color="#FFF6E8"
+        position={[-4, 6, 5]} intensity={3.1} color="#FFF6E8"
         castShadow={quality === 'high'} shadow-mapSize={[1024, 1024]}
       />
       <directionalLight position={[5, 3, -3]} intensity={1.4} color="#8FA8C8" />
-      <directionalLight position={[-1.5, 1.5, 6]} intensity={1.1} color="#E8ECF2" />
+      <directionalLight position={[-1.5, 1.5, 6]} intensity={1.5} color="#E8ECF2" />
       <spotLight position={[0, 7, 2]} angle={0.5} penumbra={1} intensity={9} color="#FFFFFF" />
       {accentLight && (
         <pointLight position={[3.2, -0.6, 3.2]} intensity={16} color={accent} distance={14} decay={2} />
@@ -194,8 +194,8 @@ function Scene({
 
       {quality === 'high' && (
         <>
-          <StudioFloor y={isMixer || isSetup ? -1.5 : -1.9} />
-          <ContactShadows position={[0, isMixer || isSetup ? -1.42 : -1.78, 0]} opacity={0.5}
+          <StudioFloor y={isSetup ? -1.35 : isMixer ? -1.5 : -1.9} />
+          <ContactShadows position={[0, isSetup ? -1.28 : isMixer ? -1.42 : -1.78, 0]} opacity={0.5}
                           scale={11} blur={2.8} far={5} resolution={512} color="#000000" />
         </>
       )}
@@ -328,7 +328,7 @@ export default function Hero3D() {
             dpr={dpr}
             shadows={quality === 'high'}
             gl={{ antialias: quality === 'high', powerPreference: 'high-performance', alpha: true }}
-            camera={{ fov: 36, position: [0, 1.15, hero.cameraDistance || 5.6] }}
+            camera={{ fov: 36, position: [0, 0.85, hero.cameraDistance || 5.6] }}
             onCreated={({ gl }) => {
               gl.toneMapping = THREE.ACESFilmicToneMapping;
               gl.toneMappingExposure = 1.1;
@@ -367,7 +367,7 @@ export default function Hero3D() {
         <div ref={introRef} className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
           {/* Scrim: keeps the headline legible over the rig without hiding it */}
           <div className="absolute inset-0"
-               style={{ background: `linear-gradient(to bottom, ${background}CC, ${background}66 45%, ${background}CC)` }}
+               style={{ background: `linear-gradient(to bottom, ${background}AA, ${background}26 45%, ${background}AA)` }}
                aria-hidden="true" />
           <div className="container-x w-full text-center relative">
             <div className="max-w-3xl mx-auto pointer-events-auto">
